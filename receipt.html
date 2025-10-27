@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ใบจ่ายเงินค่าน้ำยาง</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --fw-n:400; --fw-m:500; --fw-b:600; --border:#999; --muted:#6b6b6b; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{ font-family:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; margin:0; background:#f5f5f5; color:#111; }
+  .sheet{ width:210mm; min-height:297mm; margin:12px auto; background:#fff; padding:18mm 15mm 16mm; box-shadow:0 0 0.5mm rgba(0,0,0,.08); }
+  header{ text-align:center; margin-bottom:10mm; }
+  header h1{ margin:0 0 4px; font-size:20px; font-weight:var(--fw-b); }
+  header .sub{ font-size:13px; color:#333; font-weight:var(--fw-m); }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:13px; margin-bottom:10mm; }
+  .grid .label{color:#333}
+  .grid .value{font-weight:var(--fw-b)}
+
+  .box{ border:0.8px solid var(--border); border-radius:6px; padding:10px; margin-bottom:10mm; }
+  .boxhead{ font-size:13px; margin-bottom:8px; display:flex; justify-content:flex-start; align-items:center; gap:8px; color:#222; }
+  .boxhead .sale-date{ font-weight:var(--fw-m); }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th, td{ border:0.8px solid var(--border); padding:8px 10px; text-align:right; }
+  th{ background:#fcfcfc; font-weight:var(--fw-b) }
+  td:first-child, th:first-child{ text-align:left }
+  .sum-row td{ font-weight:var(--fw-b); }
+
+  .footer{ display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-top:10mm; font-size:13px; }
+  .sign{ border:0.8px dashed var(--muted); padding:12px; height:60px; position:relative; margin-bottom:10px; }
+  .sign::after{ content:attr(data-label); position:absolute; left:10px; bottom:6px; color:#555; font-size:12px; }
+  .sign .name{ position:absolute; right:10px; bottom:6px; color:#333; font-size:12px; max-width:60%; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .note{ font-size:12px; color:#555; margin-top:8px }
+  .controls{ position:sticky; top:0; background:#fff; padding:8px 0; text-align:right; }
+  .btn{ appearance:none; border:1px solid #111; background:#111; color:#fff; padding:6px 10px; border-radius:6px; font-size:12px; cursor:pointer; }
+  .btn.secondary{ background:#fff; color:#111 }
+
+  @media print{ body{background:#fff} .sheet{margin:0; box-shadow:none} .controls{display:none} }
+</style>
+</head>
+<body>
+<div class="sheet" id="sheet">
+  <div class="controls">
+    <button class="btn secondary" onclick="window.history.back?.()">ย้อนกลับ</button>
+    <button class="btn" onclick="window.print()">พิมพ์/บันทึกเป็น PDF</button>
+  </div>
+
+  <header>
+    <h1>ใบจ่ายเงินค่าน้ำยาง</h1>
+    <div class="sub" id="coop_name">สหกรณ์กองทุนสวนยางบ้านหนองหว้า จำกัด</div>
+  </header>
+
+  <div class="grid">
+    <div><span class="label">วันที่จ่ายเงิน: </span><span class="value" id="pay_date"></span></div>
+    <div><span class="label">เลขที่ใบรับน้ำยาง: </span><span class="value" id="slip_no"></span></div>
+    <div><span class="label">ชื่อสมาชิก/ผู้ขาย: </span><span class="value" id="member_name"></span></div>
+    <div><span class="label">หมายเลขสมาชิก: </span><span class="value" id="member_id"></span></div>
+  </div>
+
+  <div class="box">
+    <div class="boxhead">
+      <div class="sale-date">วันที่ขายน้ำยาง: <span id="sale_date" style="font-weight:600"></span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>รายการ</th>
+          <th>นน.ยางสด (กก.)</th>
+          <th>DRC (%)</th>
+          <th>นน.แห้ง (กก.)</th>
+          <th>ราคา/กก. (บาท)</th>
+          <th>จำนวนเงิน (บาท)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ยางสด</td>
+          <td id="wet_weight" data-dec="2"></td>
+          <td id="drc" data-dec="2"></td>
+          <td id="dry_weight" data-dec="2"></td>
+          <td id="price_perkg" data-dec="2"></td>
+          <td id="amount" data-dec="2"></td>
+        </tr>
+        <tr class="sum-row">
+          <td colspan="5" style="text-align:right">รวมทั้งสิ้น</td>
+          <td id="total" data-dec="2"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note" id="total_text"></div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="sign" data-label="ผู้รับเงิน / ลายเซ็น"></div>
+      <div class="sign" data-label="ผู้จ่ายเงิน / ลายเซ็น">
+        <span class="name" id="payer_name"></span>
+      </div>
+    </div>
+
+    <div>
+      <table>
+        <tr>
+          <td style="text-align:left">นายจ้าง</td>
+          <td id="employer" data-dec="2" style="width:120px; text-align:right"></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">ลูกจ้าง</td>
+          <td id="employee" data-dec="2" style="text-align:right"></td>
+        </tr>
+        <tr>
+          <td style="text-align:left">หักอื่น ๆ</td>
+          <td id="deduct" data-dec="2" style="text-align:right"></td>
+        </tr>
+        <tr class="sum-row">
+          <td style="text-align:left">ยอดสุทธิ</td>
+          <td id="net_total" data-dec="2" style="text-align:right"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">พิมพ์จากระบบ — เอกสารฉบับนี้ใช้เพื่อการอ้างอิงการจ่ายเงินค่าน้ำยาง</div>
+</div>
+
+<script>
+const url = new URL(location.href);
+const get = k => url.searchParams.get(k);
+
+const DATA = {
+  pay_date:    get('pay_date')     || '',
+  slip_no:     get('slip_no')      || '',
+  member_name: get('member_name')  || '',
+  member_id:   get('member_id')    || '',
+  sale_date:   get('sale_date')    || '',
+
+  wet_weight:  parseFloat(get('wet_weight'))   || NaN,
+  drc:         parseFloat(get('drc'))          || NaN,
+  dry_weight:  parseFloat(get('dry_weight'))   || NaN,
+  price_perkg: parseFloat(get('price_perkg'))  || NaN,
+  amount:      parseFloat(get('amount'))       || NaN,
+
+  employer:    parseFloat(get('employer'))     || 0,
+  employee:    parseFloat(get('employee'))     || 0,
+  deduct:      parseFloat(get('deduct'))       || 0,
+
+  payer_name:  get('payer_name')   || ''
+};
+
+if (Number.isNaN(DATA.dry_weight) && !Number.isNaN(DATA.wet_weight) && !Number.isNaN(DATA.drc)){
+  DATA.dry_weight = DATA.wet_weight * (DATA.drc/100);
+}
+if (Number.isNaN(DATA.amount) && !Number.isNaN(DATA.dry_weight) && !Number.isNaN(DATA.price_perkg)){
+  DATA.amount = DATA.dry_weight * DATA.price_perkg;
+}
+
+const totalDeductions = (DATA.employer||0) + (DATA.employee||0) + (DATA.deduct||0);
+const net = (DATA.amount || 0) - totalDeductions;
+
+function setText(id, val){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const dec = parseInt(el.dataset.dec||'0',10);
+  if(typeof val === 'number' && !Number.isNaN(val)){ el.textContent = val.toFixed(dec); }
+  else{ el.textContent = val ?? ''; }
+}
+
+setText('pay_date', DATA.pay_date);
+setText('slip_no', DATA.slip_no);
+setText('member_name', DATA.member_name);
+setText('member_id', DATA.member_id);
+setText('sale_date', DATA.sale_date);
+
+setText('wet_weight', DATA.wet_weight);
+setText('drc', DATA.drc);
+setText('dry_weight', DATA.dry_weight);
+setText('price_perkg', DATA.price_perkg);
+setText('amount', DATA.amount);
+setText('total', DATA.amount);
+
+setText('employer', DATA.employer);
+setText('employee', DATA.employee);
+setText('deduct', DATA.deduct);
+setText('net_total', net);
+
+document.getElementById('total_text').textContent =
+  Number.isFinite(net) ? `จำนวนเงิน (ตัวอักษร): ${thaiBahtText(net)}` : '';
+document.getElementById('payer_name').textContent = DATA.payer_name || "";
+
+function thaiBahtText(num){
+  const t=["ศูนย์","หนึ่ง","สอง","สาม","สี่","ห้า","หก","เจ็ด","แปด","เก้า"];
+  const u=["","สิบ","ร้อย","พัน","หมื่น","แสน","ล้าน"];
+  function readInt(n){ if(n===0)return""; let s="",i=0; while(n>0){let d=n%10;if(d){let w="";if(i===1&&d===1)w="สิบ";else if(i===1&&d===2)w="ยี่สิบ";else if(i>1)w=t[d]+u[i];else w=(d===1&&s!=="")?"เอ็ด":t[d];s=w+s;}n=Math.floor(n/10);i++;}return s;}
+  const intPart=Math.floor(num);const frac=Math.round((num-intPart)*100);
+  let out=readInt(intPart)+"บาท";out+=frac?readInt(frac)+"สตางค์":"ถ้วน";
+  return out.replace(/^บาท$/,"ศูนย์บาทถ้วน");
+}
+</script>
+</body>
+</html>
